@@ -1,0 +1,272 @@
+---
+title: Programação em R
+author: Cláudio A. Monteiro
+date: Dezembro, 2021
+output:
+   rmdformats::readthedown:
+    highlight: kate
+---
+<style>
+body {
+text-align: justify}
+</style>
+
+```{r knitr_init, include=FALSE}
+library(knitr); library(rmdformats); library(ggplot2); library(ggrepel); library(ggpubr)
+
+## Global options
+options(max.print="75")
+opts_chunk$set(echo=TRUE,
+	             cache=TRUE,
+               prompt=FALSE,
+               tidy=TRUE,
+               comment=NA,
+               message=FALSE,
+               warning=FALSE)
+opts_knit$set(width=75)
+```
+
+</br>
+
+
+Para avançar nos estudos em R, devemos aprender como construir funções e loops. Essas ferramentas acabam sendo um dos grandes diferenciais do R em relação a outras ferramentas como SPSS e Excel, umas vez que permitem a produção de análises automatizadas e aumentam a replicabilidade do código.
+
+# Funções em R
+
+Uma das melhores funcionalidades do R é a possibilidade de construção de funções e consequente automatização de processos. Por ser uma linguagem de programação, o R possibilita o desenvolvimento de códigos e comandos que podem ser aplicados a diferentes contextos, reduzindo o trabalho de um analista que precisa executar o mesmo trabalho diversas vezes. Começando simples, vamos desenvolver nossa primeira função, a `media()`.
+
+```{r}
+# criar funcao de media (soma dos valores divido pelo numero de casos)
+
+media <- function(x){
+  
+  media = sum(x) / length(x) 
+  
+  return(media)
+}
+```
+
+```{r}
+# testar funcao
+exemplo <- c(10, 1, 26, 34)
+media(exemplo)
+```
+
+```{r}
+mean(exemplo)
+```
+
+Uma função mais elaborada pode replicar um tipo de processamento ou visualização de dados. Vejamos o exemplo abaixo, no qual temos um gráfico scatter plot que pode ser executado entre diferentes variáveis do banco de dados Pokemon.
+
+```{r}
+# ler dados
+fulldata <- read.csv('https://raw.githubusercontent.com/claudioalvesmonteiro/nice-data-repo/master/data/Pokemon.csv')
+
+# filtrar tipos
+fulldata = fulldata[(fulldata$Type1 == 'Grass') | (fulldata$Type1 == 'Fire') | (fulldata$Type1 == 'Water'),]
+
+# selecionar 20 primeiros para visualizar
+data = fulldata[1:20,]
+```
+
+
+```{r}
+ggplot(data, aes(x = Attack, y = Defense)) +
+  geom_point()+
+  geom_smooth(method=lm,se=FALSE)+
+  geom_text_repel(aes(label = Name), size = 4)+
+  theme_classic()+
+  labs(y = "Ataque", x="Defesa")+
+  theme(axis.text=element_text(size=12),axis.title=element_text(size=14,face="bold"))
+```
+
+Agora vamos definir uma função para executar o gráfico acima e que pode ser replicada para qualquer par de variáveis numéricas na base de dados.
+
+```{r}
+scatterFun <- function(data, xaxis, yaxis, xname, yname){
+  
+  plot <- ggplot(data, aes(x = xaxis, y = yaxis)) +
+          geom_point()+
+          geom_smooth(method = lm, se = FALSE)+
+          geom_text_repel(aes(label = Name), size = 4)+
+          theme_classic()+
+          labs(x = xname, y = yname)+
+          theme(axis.text = element_text(size=12), axis.title = element_text(size = 14, face = "bold"))
+
+  return(plot)
+}
+```
+
+Agora vamos executar o gráfico de maneira bem mais simples, para qualquer par de variáveis numéricas:
+
+```{r}
+scatterFun(data, data$Attack, data$Defense, 'Ataque', 'Defesa')
+```
+
+```{r}
+scatterFun(data, data$Attack, data$Speed, 'Ataque', 'Velocidade')
+```
+
+
+## Praticar
+
+Agora é com você! Para praticar, crie uma função que retorna um gráfico histograma para analisar a distribuição de qualquer variável númerica entre as classes Type1 do dataset.
+
+
+```{r}
+ggplot(fulldata, aes(x=Attack, fill=Type1))+
+  geom_histogram()
+```
+
+# Condicionais If/Else
+
+Declarações condicionais servem para impor uma condição para a execução de uma tarefa, isso é bem útil quando precisamos executar uma atum número é negativo ou positivo.
+
+
+```{r}
+numero = -10
+
+if (numero > 0){
+  
+  print('número é positivo')
+  
+} else {
+  
+  print('número é negativo')
+  
+}
+  
+```
+Podemos ainda aplicar uma condição dentro de uma função. Vamos usar a função acima para colcoar uma condição para mostrar ou não os nomes dos pokemons no gráfico.
+
+```{r}
+scatterFun2 <- function(data, xaxis, yaxis, xname, yname, showname=TRUE){
+  
+  plot <- ggplot(data, aes(x = xaxis, y = yaxis)) +
+          geom_point()+
+          geom_smooth(method = lm, se = FALSE)+
+          theme_classic()+
+          labs(x = xname, y = yname)+
+          theme(axis.text = element_text(size=12), axis.title = element_text(size = 14, face = "bold"))
+  
+  if (showname == TRUE){
+    
+    plot <- plot + geom_text_repel(aes(label = Name), size = 4)
+
+    }
+
+  return(plot)
+}
+```
+
+
+```{r}
+scatterFun2(data, data$Attack, data$Speed, 'Ataque', 'Velocidade', showname = FALSE)
+```
+
+# Loops
+
+Loops são uteis para reproduzir uma mesma tarefa para diferentes objetos ou executar uma sequência de processamentos. Pode ser aplicado a uma situação na qual você quer gerar vários gráficos do mesmo tipo com diferentes variáveis, por exemplo. 
+
+O loop *For* é utilizado para mapear uma lista de objetos e executar alguma tarefa com cada objeto. Abaixo segue um exemplo simples, em que passamos uma lista de nomes para que sejam printados no console.
+
+```{r}
+# FOR
+nomes <- c('José', 'Maria', 'Francisco')
+
+for (nome in nomes){
+  
+  print(nome)
+  
+}
+```
+
+O loop *While* é utilizado quando você quer executar um processamento, porém colocando uma condição de parada. Abaixo segue um exemplo em que o objeto _cont_ é iniciado em zero e a cada laço do while é adicionado 1 a _cont_ e o valor é mostrado no console.
+
+```{r}
+# WHILE
+cont <- 0 
+
+while (cont < 5){
+  
+  print(cont)
+  cont = cont + 1
+  
+}
+```
+
+## Praticar
+
+Crie um loop para mostrar no console a raiz quadrada de cada número na lista abaixo.
+
+```{r}
+
+lista <- c(4, 16, 8, 27, 127)
+
+```
+
+# Combinando Funções e Loops
+
+Para desfrutar de todo o poder dessas ferramentas computacionais agora vamos combinar a utilização de loops e funções. Como exemplo vamos reutilizar o dataset Pokemon para desenvolver um loop que vai criar e salvar gráficos scatter plot entre diferentes variáveis do dataset.
+
+
+```{r}
+# criando a funcao
+scatterFun3 <- function(data, var){
+  
+  plot <- ggplot(data, aes(x = data[,'Total'], y = data[,var])) +
+          geom_point()+
+          geom_smooth(method = lm, se = FALSE)+
+          theme_classic()+
+          labs(x = 'Total', y = var)+
+          theme(axis.text = element_text(size=12), axis.title = element_text(size = 14, face = "bold"))
+
+  return(plot)
+}
+```
+
+
+```{r}
+# lista de variaveis
+vars <- c('Attack', 'Defense', 'Sp_Atk', 'Sp_Def', 'Speed', 'HP')
+
+# agora vamos criar e salvar diferentes graficos entre 'Total' e cada variavel dentro de vars
+for (var in vars){
+  
+  # gera grafico
+  plot <- scatterFun3(data, var)
+  
+  # gera nome para salvar e printa nome
+  nome_para_salvar = paste0('graficos/Total_', var, '_scatter_plot.png')
+  
+  # salvar grafico localmente
+  ggsave(nome_para_salvar, plot, width = 5, height = 4)
+  
+}
+```
+
+# Dicas extras
+
+1. Não usar caracteres como acentos no meio do código
+2. Criar um projeto no RStudio em vez de usar o setwd()
+3. Versionar o código no Github
+4. Estruturar comentarios como no exemplo abaixo
+
+```{r}
+
+#======================
+# pre-processamneto
+#=====================
+
+# removendo casos faltantes
+
+# visualizar distribuicao da variavel X
+
+#======================
+# modelos
+#=====================
+
+# modelo 1 - descricao breve
+
+# modelo 2 - descricao breve
+```
